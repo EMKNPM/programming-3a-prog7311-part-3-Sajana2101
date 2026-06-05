@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -24,9 +25,32 @@ namespace GLMS2.Services.Api
             }
         };
 
-        public ContractApiService(IHttpClientFactory httpClientFactory)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public ContractApiService(
+            IHttpClientFactory httpClientFactory,
+            IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClientFactory.CreateClient("GLMSApi");
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private void AddAuthorizationHeader()
+        {
+            var token = _httpContextAccessor.HttpContext?
+                .Session
+                .GetString("JwtToken");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = null;
+                return;
+            }
+
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue(
+                    "Bearer",
+                    token);
         }
 
         public async Task<IEnumerable<Contract>> FilterContractsAsync(
@@ -117,7 +141,7 @@ namespace GLMS2.Services.Api
         public async Task CreateContractAsync(ContractCreateViewModel model)
         {
             using var form = CreateContractMultipartContent(model);
-
+            AddAuthorizationHeader();
             var response = await _httpClient.PostAsync("api/contracts", form);
 
             if (!response.IsSuccessStatusCode)
@@ -129,7 +153,7 @@ namespace GLMS2.Services.Api
         public async Task<bool> UpdateContractAsync(ContractEditViewModel model)
         {
             using var form = CreateContractMultipartContent(model);
-
+            AddAuthorizationHeader();
             var response = await _httpClient.PutAsync(
                 $"api/contracts/{model.ContractId}",
                 form);
@@ -149,6 +173,7 @@ namespace GLMS2.Services.Api
 
         public async Task<bool> DeleteContractAsync(int id)
         {
+            AddAuthorizationHeader();
             var response = await _httpClient.DeleteAsync($"api/contracts/{id}");
 
             if (response.StatusCode == HttpStatusCode.NotFound)

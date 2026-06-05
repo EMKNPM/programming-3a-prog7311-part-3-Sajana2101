@@ -5,6 +5,7 @@ using GLMS2.Interfaces;
 using GLMS2.Models;
 using GLMS2.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GLMS2.API2.Controllers
 {
@@ -67,6 +68,7 @@ namespace GLMS2.API2.Controllers
         /// <summary>
         /// Creates a new contract and uploads its signed PDF agreement.
         /// </summary>
+        [Authorize]
         [HttpPost]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(ContractResponseDto),
@@ -107,6 +109,7 @@ namespace GLMS2.API2.Controllers
         /// <summary>
         /// Updates the workflow status of an existing contract.
         /// </summary>
+        [Authorize]
         [HttpPatch("{id:int}/status")]
         [ProducesResponseType(typeof(ContractResponseDto),
             StatusCodes.Status200OK)]
@@ -141,6 +144,8 @@ namespace GLMS2.API2.Controllers
         /// <summary>
         /// Updates an existing contract and optionally replaces the signed PDF agreement.
         /// </summary>
+        
+        [Authorize]
         [HttpPut("{id:int}")]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(ContractResponseDto), StatusCodes.Status200OK)]

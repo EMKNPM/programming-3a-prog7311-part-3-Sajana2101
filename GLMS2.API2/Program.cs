@@ -5,6 +5,10 @@ using GLMS2.Services;
 using GLMS2.Services.Factories;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using GLMS2.Services.Mediator;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +31,35 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("Jwt:Key is missing.");
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]
+    ?? throw new InvalidOperationException("Jwt:Issuer is missing.");
+
+var jwtAudience = builder.Configuration["Jwt:Audience"]
+    ?? throw new InvalidOperationException("Jwt:Audience is missing.");
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 // Repository layer.
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
@@ -35,6 +68,11 @@ builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IContractFactory, ContractFactory>();
 builder.Services.AddScoped<IContractService, ContractService>();
+builder.Services.AddScoped<IServiceRequestRepository, ServiceRequestRepository>();
+builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();
+builder.Services.AddScoped<IMediator, GLMSMediator>();
+
+builder.Services.AddHttpClient<ICurrencyService, CurrencyService>();
 
 var app = builder.Build();
 
@@ -58,8 +96,10 @@ app.UseHttpsRedirection();
 
 // Allows uploaded agreement files to be stored under wwwroot.
 app.UseStaticFiles();
+app.UseAuthentication();
 
 app.UseAuthorization();
+
 
 app.MapControllers();
 

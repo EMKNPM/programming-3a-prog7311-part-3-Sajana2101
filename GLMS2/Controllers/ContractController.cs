@@ -19,6 +19,12 @@ namespace GLMS2.Controllers
             _clientApiService = clientApiService;
         }
 
+        private bool IsLoggedIn()
+        {
+            return !string.IsNullOrWhiteSpace(
+                HttpContext.Session.GetString("JwtToken"));
+        }
+
         public async Task<IActionResult> Index(
             DateTime? startDateFrom,
             DateTime? startDateTo,
@@ -50,6 +56,10 @@ namespace GLMS2.Controllers
 
         public async Task<IActionResult> Create()
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
             await LoadDropdowns();
             return View();
         }
@@ -58,6 +68,10 @@ namespace GLMS2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ContractCreateViewModel model)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
             if (!ModelState.IsValid)
             {
                 await LoadDropdowns();
@@ -79,6 +93,10 @@ namespace GLMS2.Controllers
 
         public async Task<IActionResult> Details(int id)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
             var contract = await _contractApiService.GetContractByIdAsync(id);
 
             if (contract == null)
@@ -91,6 +109,10 @@ namespace GLMS2.Controllers
 
         public async Task<IActionResult> Delete(int id)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
             var contract = await _contractApiService.GetContractByIdAsync(id);
 
             if (contract == null)
@@ -105,6 +127,11 @@ namespace GLMS2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var deleted = await _contractApiService.DeleteContractAsync(id);
 
             if (!deleted)
@@ -145,6 +172,10 @@ namespace GLMS2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ContractEditViewModel model)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
             if (!ModelState.IsValid)
             {
                 await LoadDropdowns();

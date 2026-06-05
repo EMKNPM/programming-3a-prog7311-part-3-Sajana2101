@@ -1,0 +1,41 @@
+﻿@model IEnumerable<GLMS2.Models.ServiceRequest>
+
+<h2>Service Requests</h2>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New Service Request</a>
+</p>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Client</th>
+            <th>Contract ID</th>
+            <th>Description</th>
+            <th>Cost (USD)</th>
+            <th>Cost (ZAR)</th>
+            <th>Contract Status</th>
+            <th>Created Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var request in Model)
+        {
+            <tr>
+                <td>@request.Contract?.Client?.Name</td>
+                <td>@request.ContractId</td>
+                <td>@request.Description</td>
+                <td>@request.CostUSD</td>
+                <td>@request.CostZAR</td>
+                <td>@request.Contract?.Status</td>
+                <td>@request.CreatedDate.ToShortDateString()</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@request.ServiceRequestId">Details</a> |
+                    <a asp-action="Edit" asp-route-id="@request.ServiceRequestId">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@request.ServiceRequestId">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,28 @@
+﻿@model GLMS2.ViewModels.LoginViewModel
+
+<h2>Login</h2>
+
+<p>Use the demo admin account to manage contracts.</p>
+
+<form asp-action="Login" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div>
+        <label asp-for="Username"></label>
+        <input asp-for="Username" />
+        <span asp-validation-for="Username" class="text-danger"></span>
+    </div>
+
+    <div>
+        <label asp-for="Password"></label>
+        <input asp-for="Password" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <button type="submit">Login</button>
+</form>
+
+<p>
+    Demo username: <strong>admin</strong><br />
+    Demo password: <strong>Admin@123</strong>
+</p>
