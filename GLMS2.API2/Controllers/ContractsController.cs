@@ -138,6 +138,122 @@ namespace GLMS2.API2.Controllers
             return Ok(ToResponseDto(updatedContract));
         }
 
+        /// <summary>
+        /// Updates an existing contract and optionally replaces the signed PDF agreement.
+        /// </summary>
+        [HttpPut("{id:int}")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(ContractResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ContractResponseDto>> UpdateContract(
+            int id,
+            [FromForm] ContractEditViewModel model)
+        {
+            if (id != model.ContractId)
+            {
+                return BadRequest(new
+                {
+                    message = "The route ID does not match the contract ID."
+                });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
+            try
+            {
+                var updated = await _contractService
+                    .UpdateContractAsync(model, GetWebRootPath());
+
+                if (!updated)
+                {
+                    return NotFound(new
+                    {
+                        message = $"Contract with ID {id} was not found."
+                    });
+                }
+
+                var contract = await _contractService.GetContractByIdAsync(id);
+
+                if (contract == null)
+                {
+                    return NotFound(new
+                    {
+                        message = $"Contract with ID {id} was not found."
+                    });
+                }
+
+                return Ok(ToResponseDto(contract));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Deletes an existing contract.
+        /// </summary>
+        [HttpDelete("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteContract(int id)
+        {
+            var deleted = await _contractService.DeleteContractAsync(id);
+
+            if (!deleted)
+            {
+                return NotFound(new
+                {
+                    message = $"Contract with ID {id} was not found."
+                });
+            }
+
+            return NoContent();
+        }
+
+       
+        /// Downloads the signed agreement PDF for a contract.
+      
+        [HttpGet("{id:int}/agreement")]
+        [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DownloadAgreement(int id)
+        {
+            var contract = await _contractService.GetContractByIdAsync(id);
+
+            if (contract == null || string.IsNullOrWhiteSpace(contract.SignedAgreementFilePath))
+            {
+                return NotFound(new
+                {
+                    message = "Signed agreement file was not found for this contract."
+                });
+            }
+
+            var relativePath = contract.SignedAgreementFilePath
+                .Replace("/", Path.DirectorySeparatorChar.ToString());
+
+            var fullPath = Path.Combine(GetWebRootPath(), relativePath);
+
+            if (!System.IO.File.Exists(fullPath))
+            {
+                return NotFound(new
+                {
+                    message = "The signed agreement file does not exist on the server."
+                });
+            }
+
+            var fileName = Path.GetFileName(fullPath);
+
+            return PhysicalFile(fullPath, "application/pdf", fileName);
+        }
+
         private string GetWebRootPath()
         {
             var webRootPath = _environment.WebRootPath

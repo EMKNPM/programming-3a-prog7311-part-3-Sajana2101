@@ -4,6 +4,7 @@ using GLMS2.Services;
 using GLMS2.Services.Factories;
 using GLMS2.Services.Mediator;
 using Microsoft.EntityFrameworkCore;
+using GLMS2.Services.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,17 @@ builder.Services.AddScoped<IContractFactory, ContractFactory>();
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();
 builder.Services.AddScoped<IMediator, GLMSMediator>();
+
+builder.Services.AddHttpClient("GLMSApi", client =>
+{
+    var baseUrl = builder.Configuration["ApiSettings:BaseUrl"]
+        ?? throw new InvalidOperationException("ApiSettings:BaseUrl is missing.");
+
+    client.BaseAddress = new Uri(baseUrl);
+});
+
+builder.Services.AddScoped<IContractApiService, ContractApiService>();
+builder.Services.AddScoped<IClientApiService, ClientApiService>();
 
 // HttpClient for external currency API
 builder.Services.AddHttpClient<ICurrencyService, CurrencyService>();

@@ -29,6 +29,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Repository layer.
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
+builder.Services.AddScoped<IClientRepository, ClientRepository>();
 
 // Existing backend services and Factory pattern.
 builder.Services.AddScoped<IFileService, FileService>();
