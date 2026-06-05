@@ -1,42 +1,28 @@
-﻿using GLMS2.Data;
+﻿using GLMS2.Interfaces;
 using GLMS2.Models;
-using GLMS2.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using GLMS2.ViewModels;
 
 namespace GLMS2.Controllers
 {
     public class ClientController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IClientApiService _clientApiService;
 
-        // Dependency Injection of ApplicationDbContext
-        // use EF Core with SQL Server for data persistence
-        public ClientController(ApplicationDbContext context)
+        public ClientController(IClientApiService clientApiService)
         {
-            _context = context;
+            _clientApiService = clientApiService;
         }
 
-        // GET: Client
-        //implement database entities and allow viewing stored data
         public async Task<IActionResult> Index()
         {
-            var clients = await _context.Clients.ToListAsync();
+            var clients = await _clientApiService.GetAllClientsAsync();
             return View(clients);
         }
 
-        // GET: Client/Details/5
-        //handle complex relationships (Client --> Contracts)
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var client = await _context.Clients
-                .Include(c => c.Contracts)
-                .FirstOrDefaultAsync(c => c.ClientId == id);
+            var client = await _clientApiService.GetClientByIdAsync(id);
 
             if (client == null)
             {
@@ -46,109 +32,98 @@ namespace GLMS2.Controllers
             return View(client);
         }
 
-        // GET: Client/Create
-        // Returns form for creating a new client
-        // UI must allow capturing client data
         public IActionResult Create()
         {
-            return View();
+            return View(new ClientCreateViewModel());
         }
 
-        // POST: Client/Create
-        // Saves new client to database using EF Core
-        // Uses ViewModel for separation of concerns (MVC layered architecture requirement)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ClientCreateViewModel model)
         {
-            // Model validation ensures data integrity
-            // Meets requirement: validation of user input
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-            var client = new Client
+            try
             {
-                Name = model.Name,
-                Region = model.Region,
-                Email = model.Email
-            };
-            // Adds client entity to SQL Server database
-            _context.Clients.Add(client);
-            await _context.SaveChangesAsync();
+                var client = new Client
+                {
+                    Name = model.Name,
+                    Region = model.Region,
+                    Email = model.Email
+                };
 
-            return RedirectToAction(nameof(Index));
+                await _clientApiService.CreateClientAsync(client);
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+                return View(model);
+            }
         }
 
-        // GET: Client/Edit/5
-        // Retrieves existing client for editing
-        // support updating stored records
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var client = await _context.Clients.FindAsync(id);
+            var client = await _clientApiService.GetClientByIdAsync(id);
 
             if (client == null)
             {
                 return NotFound();
             }
-            // ViewModel used to maintain separation between UI and database model
-            var model = new ClientCreateViewModel
+
+            var model = new ClientEditViewModel
             {
+                ClientId = client.ClientId,
                 Name = client.Name,
                 Region = client.Region,
                 Email = client.Email
             };
 
-            ViewBag.ClientId = client.ClientId;
             return View(model);
         }
 
-        // POST: Client/Edit/5
-        // Updates existing client record in SQL Server database
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, ClientCreateViewModel model)
+        public async Task<IActionResult> Edit(ClientEditViewModel model)
         {
             if (!ModelState.IsValid)
             {
-                ViewBag.ClientId = id;
                 return View(model);
             }
 
-            var client = await _context.Clients.FindAsync(id);
-
-            if (client == null)
+            try
             {
-                return NotFound();
+                var client = new Client
+                {
+                    ClientId = model.ClientId,
+                    Name = model.Name,
+                    Region = model.Region,
+                    Email = model.Email
+                };
+
+                var updated = await _clientApiService.UpdateClientAsync(client);
+
+                if (!updated)
+                {
+                    return NotFound();
+                }
+
+                return RedirectToAction(nameof(Index));
             }
-
-            client.Name = model.Name;
-            client.Region = model.Region;
-            client.Email = model.Email;
-
-            _context.Update(client);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+                return View(model);
+            }
         }
 
-        // GET: Client/Delete/5
-        // Displays confirmation page before deletion
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var client = await _context.Clients
-                .FirstOrDefaultAsync(c => c.ClientId == id);
+            var client = await _clientApiService.GetClientByIdAsync(id);
 
             if (client == null)
             {
@@ -158,18 +133,15 @@ namespace GLMS2.Controllers
             return View(client);
         }
 
-        // POST: Client/Delete/5
-        // Permanently removes client from database
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var client = await _context.Clients.FindAsync(id);
+            var deleted = await _clientApiService.DeleteClientAsync(id);
 
-            if (client != null)
+            if (!deleted)
             {
-                _context.Clients.Remove(client);
-                await _context.SaveChangesAsync();
+                return NotFound();
             }
 
             return RedirectToAction(nameof(Index));

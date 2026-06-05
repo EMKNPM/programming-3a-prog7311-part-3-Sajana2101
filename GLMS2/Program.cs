@@ -1,10 +1,5 @@
-using GLMS2.Data;
 using GLMS2.Interfaces;
-using GLMS2.Services;
 using GLMS2.Services.Api;
-using GLMS2.Services.Factories;
-using GLMS2.Services.Mediator;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,29 +28,11 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Frontend API services
+// Frontend API services only
 builder.Services.AddScoped<IContractApiService, ContractApiService>();
 builder.Services.AddScoped<IClientApiService, ClientApiService>();
 builder.Services.AddScoped<IAuthApiService, AuthApiService>();
 builder.Services.AddScoped<IServiceRequestApiService, ServiceRequestApiService>();
-
-// Existing database connection
-// Keep this for now because Service Requests and other existing features may still depend on it.
-// Later, once everything is fully refactored, the MVC project should no longer use the database directly.
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Existing dependency injection services
-// Keep these for now until the full frontend is refactored to use the API.
-builder.Services.AddScoped<IClientService, ClientService>();
-builder.Services.AddScoped<IFileService, FileService>();
-builder.Services.AddScoped<IContractFactory, ContractFactory>();
-builder.Services.AddScoped<IContractService, ContractService>();
-builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();
-builder.Services.AddScoped<IMediator, GLMSMediator>();
-
-// HttpClient for external currency API
-builder.Services.AddHttpClient<ICurrencyService, CurrencyService>();
 
 var app = builder.Build();
 
@@ -72,7 +49,6 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Session must come after UseRouting and before actions try to access session
 app.UseSession();
 
 app.UseAuthorization();

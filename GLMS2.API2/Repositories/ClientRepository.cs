@@ -26,5 +26,25 @@ namespace GLMS2.Repositories
             return await _context.Clients
                 .FirstOrDefaultAsync(c => c.ClientId == id);
         }
+
+        public async Task AddAsync(Client client)
+        {
+            await _context.Clients.AddAsync(client);
+        }
+
+        public void Update(Client client)
+        {
+            _context.Clients.Update(client);
+        }
+
+        public void Remove(Client client)
+        {
+            _context.Clients.Remove(client);
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 }
