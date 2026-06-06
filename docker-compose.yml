@@ -1,0 +1,68 @@
+name: glms-part3
+
+services:
+  sql-server-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-server-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YourStrong!Passw0rd2026"
+      MSSQL_PID: "Developer"
+    ports:
+      - "14333:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - glms-network
+
+  glms-backend-api:
+    container_name: glms-backend-api
+    build:
+      context: .
+      dockerfile: GLMS2.API2/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
+
+      ConnectionStrings__DefaultConnection: "Server=sql-server-db,1433;Database=GLMSDB;User Id=sa;Password=YourStrong!Passw0rd2026;TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=true"
+
+      Jwt__Key: "GLMS2SuperSecretJwtKeyForPartThreeAuthentication2026"
+      Jwt__Issuer: "GLMS2.API2"
+      Jwt__Audience: "GLMS2.MVC"
+      Jwt__ExpiresInMinutes: "120"
+
+      DemoUser__Username: "admin"
+      DemoUser__Password: "Admin@123"
+    ports:
+      - "8081:8080"
+    depends_on:
+      - sql-server-db
+    volumes:
+      - api-uploads:/app/wwwroot/uploads
+    networks:
+      - glms-network
+
+  glms-frontend-web:
+    container_name: glms-frontend-web
+    build:
+      context: .
+      dockerfile: GLMS2/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
+
+      ApiSettings__BaseUrl: "http://glms-backend-api:8080/"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - glms-backend-api
+    networks:
+      - glms-network
+
+volumes:
+  sqlserver-data:
+  api-uploads:
+
+networks:
+  glms-network:
+    driver: bridge

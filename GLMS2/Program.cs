@@ -43,7 +43,13 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+var runningInContainer =
+    Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
+
+if (!runningInContainer)
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseStaticFiles();
 

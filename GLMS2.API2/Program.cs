@@ -93,8 +93,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+var runningInContainer =
+    Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
 
+if (!runningInContainer)
+{
+    app.UseHttpsRedirection();
+}
 // Allows uploaded agreement files to be stored under wwwroot.
 app.UseStaticFiles();
 app.UseAuthentication();
