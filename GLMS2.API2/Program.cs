@@ -75,6 +75,7 @@ builder.Services.AddScoped<IMediator, GLMSMediator>();
 builder.Services.AddHttpClient<ICurrencyService, CurrencyService>();
 
 var app = builder.Build();
+await ApplyDatabaseMigrationsWithRetryAsync(app);
 
 if (app.Environment.IsDevelopment())
 {
@@ -100,7 +101,43 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-
+app.MapGet("/health", () => Results.Ok("GLMS API is running"));
 app.MapControllers();
 
 app.Run();
+static async Task ApplyDatabaseMigrationsWithRetryAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider
+        .GetRequiredService<ILoggerFactory>()
+        .CreateLogger("DatabaseMigration");
+
+    const int maxAttempts = 10;
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++)
+    {
+        try
+        {
+            logger.LogInformation("Applying database migrations. Attempt {Attempt}/{MaxAttempts}", attempt, maxAttempts);
+
+            await dbContext.Database.MigrateAsync();
+
+            logger.LogInformation("Database migrations applied successfully.");
+
+            return;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Database migration attempt {Attempt} failed.", attempt);
+
+            if (attempt == maxAttempts)
+            {
+                throw;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(5));
+        }
+    }
+}
