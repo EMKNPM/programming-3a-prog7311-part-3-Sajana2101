@@ -6,6 +6,8 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http;
+using System.Net.Http.Headers;
 
 namespace GLMS2.Services.Api
 {
@@ -22,9 +24,29 @@ namespace GLMS2.Services.Api
             }
         };
 
-        public ServiceRequestApiService(IHttpClientFactory httpClientFactory)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public ServiceRequestApiService(
+            IHttpClientFactory httpClientFactory,
+            IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClientFactory.CreateClient("GLMSApi");
+            _httpContextAccessor = httpContextAccessor;
+        }
+        private void AddAuthorizationHeader()
+        {
+            var token = _httpContextAccessor.HttpContext?
+                .Session
+                .GetString("JwtToken");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = null;
+                return;
+            }
+
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
         }
 
         public async Task<IEnumerable<ServiceRequest>> GetAllServiceRequestsAsync()
@@ -85,6 +107,7 @@ namespace GLMS2.Services.Api
         public async Task<ServiceRequest?> CreateServiceRequestAsync(
             ServiceRequestCreateViewModel model)
         {
+            AddAuthorizationHeader();
             var response = await _httpClient.PostAsJsonAsync(
                 "api/serviceRequests",
                 model,
@@ -103,6 +126,7 @@ namespace GLMS2.Services.Api
 
         public async Task<bool> UpdateServiceRequestAsync(ServiceRequestEditViewModel model)
         {
+            AddAuthorizationHeader();
             var response = await _httpClient.PutAsJsonAsync(
                 $"api/serviceRequests/{model.ServiceRequestId}",
                 model,
@@ -123,6 +147,7 @@ namespace GLMS2.Services.Api
 
         public async Task<bool> DeleteServiceRequestAsync(int id)
         {
+            AddAuthorizationHeader();
             var response = await _httpClient.DeleteAsync($"api/serviceRequests/{id}");
 
             if (response.StatusCode == HttpStatusCode.NotFound)

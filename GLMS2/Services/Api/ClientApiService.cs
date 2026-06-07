@@ -1,6 +1,7 @@
 ﻿using GLMS2.Interfaces;
 using GLMS2.Models;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -14,12 +15,29 @@ namespace GLMS2.Services.Api
         {
             PropertyNameCaseInsensitive = true
         };
-
-        public ClientApiService(IHttpClientFactory httpClientFactory)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public ClientApiService(
+    IHttpClientFactory httpClientFactory,
+    IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClientFactory.CreateClient("GLMSApi");
+            _httpContextAccessor = httpContextAccessor;
         }
+        private void AddAuthorizationHeader()
+        {
+            var token = _httpContextAccessor.HttpContext?
+                .Session
+                .GetString("JwtToken");
 
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = null;
+                return;
+            }
+
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+        }
         public async Task<IEnumerable<Client>> GetAllClientsAsync()
         {
             var response = await _httpClient.GetAsync("api/clients");
@@ -55,6 +73,7 @@ namespace GLMS2.Services.Api
 
         public async Task CreateClientAsync(Client client)
         {
+            AddAuthorizationHeader();
             var response = await _httpClient.PostAsJsonAsync("api/clients", new
             {
                 client.Name,
@@ -70,6 +89,7 @@ namespace GLMS2.Services.Api
 
         public async Task<bool> UpdateClientAsync(Client client)
         {
+            AddAuthorizationHeader();
             var response = await _httpClient.PutAsJsonAsync(
                 $"api/clients/{client.ClientId}",
                 new
@@ -95,6 +115,7 @@ namespace GLMS2.Services.Api
 
         public async Task<bool> DeleteClientAsync(int id)
         {
+            AddAuthorizationHeader();
             var response = await _httpClient.DeleteAsync($"api/clients/{id}");
 
             if (response.StatusCode == HttpStatusCode.NotFound)

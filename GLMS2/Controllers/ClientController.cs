@@ -1,7 +1,8 @@
 ﻿using GLMS2.Interfaces;
 using GLMS2.Models;
-using Microsoft.AspNetCore.Mvc;
 using GLMS2.ViewModels;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace GLMS2.Controllers
 {
@@ -34,6 +35,11 @@ namespace GLMS2.Controllers
 
         public IActionResult Create()
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             return View(new ClientCreateViewModel());
         }
 
@@ -41,6 +47,11 @@ namespace GLMS2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ClientCreateViewModel model)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -68,6 +79,11 @@ namespace GLMS2.Controllers
 
         public async Task<IActionResult> Edit(int id)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var client = await _clientApiService.GetClientByIdAsync(id);
 
             if (client == null)
@@ -90,6 +106,11 @@ namespace GLMS2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ClientEditViewModel model)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -123,6 +144,11 @@ namespace GLMS2.Controllers
 
         public async Task<IActionResult> Delete(int id)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var client = await _clientApiService.GetClientByIdAsync(id);
 
             if (client == null)
@@ -137,6 +163,11 @@ namespace GLMS2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var deleted = await _clientApiService.DeleteClientAsync(id);
 
             if (!deleted)
@@ -145,6 +176,12 @@ namespace GLMS2.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private bool IsLoggedIn()
+        {
+            return !string.IsNullOrWhiteSpace(
+                HttpContext.Session.GetString("JwtToken"));
         }
     }
 }

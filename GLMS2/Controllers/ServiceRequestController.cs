@@ -1,5 +1,6 @@
 ﻿using GLMS2.Interfaces;
 using GLMS2.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -25,6 +26,11 @@ namespace GLMS2.Controllers
 
         public async Task<IActionResult> Create()
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             await LoadContractsDropdown();
 
             var model = new ServiceRequestCreateViewModel();
@@ -48,6 +54,11 @@ namespace GLMS2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ServiceRequestCreateViewModel model)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (!ModelState.IsValid)
             {
                 await LoadContractsDropdown();
@@ -95,6 +106,11 @@ namespace GLMS2.Controllers
 
         public async Task<IActionResult> Delete(int id)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var serviceRequest =
                 await _serviceRequestApiService.GetServiceRequestByIdAsync(id);
 
@@ -110,6 +126,11 @@ namespace GLMS2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var deleted =
                 await _serviceRequestApiService.DeleteServiceRequestAsync(id);
 
@@ -123,6 +144,11 @@ namespace GLMS2.Controllers
 
         public async Task<IActionResult> Edit(int id)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var model =
                 await _serviceRequestApiService.GetServiceRequestForEditAsync(id);
 
@@ -151,6 +177,11 @@ namespace GLMS2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ServiceRequestEditViewModel model)
         {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (!ModelState.IsValid)
             {
                 await LoadContractsDropdown();
@@ -231,6 +262,12 @@ namespace GLMS2.Controllers
             {
                 ViewBag.ApiError = "Exchange rate could not be loaded.";
             }
+        }
+
+        private bool IsLoggedIn()
+        {
+            return !string.IsNullOrWhiteSpace(
+                HttpContext.Session.GetString("JwtToken"));
         }
     }
 }

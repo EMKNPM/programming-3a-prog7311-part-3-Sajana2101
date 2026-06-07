@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
+    <File Path="docker-compose.yml" />
+  </Folder>
   <Project Path="GLMS2.API2/GLMS2.API2.csproj" Id="ef835e6b-2061-4be8-b850-ddd32521261e" />
   <Project Path="GLMS2.Test/GLMS2.Test.csproj" />
   <Project Path="GLMS2/GLMS2.csproj" />

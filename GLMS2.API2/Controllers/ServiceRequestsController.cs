@@ -3,6 +3,7 @@ using GLMS2.Interfaces;
 using GLMS2.Models;
 using GLMS2.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GLMS2.API2.Controllers
 {
@@ -74,7 +75,7 @@ namespace GLMS2.API2.Controllers
                     });
             }
         }
-
+        [Authorize]
         [HttpPost]
         [ProducesResponseType(typeof(ServiceRequestResponseDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -110,7 +111,7 @@ namespace GLMS2.API2.Controllers
                 });
             }
         }
-
+        [Authorize]
         [HttpPut("{id:int}")]
         [ProducesResponseType(typeof(ServiceRequestResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -166,7 +167,7 @@ namespace GLMS2.API2.Controllers
                 });
             }
         }
-
+        [Authorize]
         [HttpDelete("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
